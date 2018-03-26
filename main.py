@@ -1,194 +1,180 @@
 from tkinter import *
-import openform
+from string import Template
 
-def write_openform(parsedDict, outputPath):
-  with open(outputPath, "w") as text_file:
-    text_file.write(openform.build(parsedDict))
+def saveFoamFiles(valueDict):
+  """
+  주어진 초안은 세개의 파일을 다루고 있습니다. 더 수정하는 파일이 생길경우 tmpl파일과 dest를 각각 추가해주십시오.
+  또한 같은 파일 속에서 variable이 늘어날 경우 tmpl파일을 수정해야합니다.
+  """
+  writeTemplateTo('./templates/controlDict.tmpl', './dest/controlDict', valueDict)
+  writeTemplateTo('./templates/physicalParameters.tmpl', './dest/physicalParameters', valueDict)
+  writeTemplateTo('./templates/transportProperties.tmpl', './dest/transportProperties', valueDict)
 
-class OpenformInputFrame(Frame):
-  def __init__(self, master, **kwargs):
-    '''
-      openform 변수를 다루기 위한 Label-Entry 쌍 입니다. 
-      Frame의 subclass로 같은 option을 사용할 수 있으며 추가로 몇가지 옵션이 더 있습니다.
+def writeTemplateTo(tmplPath, destPath, keyDict):
+  """
+  tmplPath의 template 파일을 읽어들여 keyDict로 채우고 destPath에 파일을 생성합니다.
+  """
 
-      text: label의 text입니다.  
-      Var: entry의 Var class입니다. default - StringVar
-      openform_path: required. save시에 변경할 openform파일 경로입니다.
-      label_options: label 생성시에 넘기는 options. 사용시엔 text를 명시해 주세요.
-      label_grid_options: label grid에 넘기는 options. default - { 'column': 0, 'row': 0 }
-      entry_options: etnry 생성시에 넘기는 options
-      entry_grid_options: entry grid에 넘기는 options. default - { 'column': 1, 'row': 0 }
-      
-    '''
+  with open(tmplPath, 'r') as tmplFile:
+    tmpl = Template(tmplFile.read())
 
+  with open(destPath, 'w') as destFile:
+    print(tmpl.substitute(keyDict), file=destFile)
 
-    # required
-    openform_path = kwargs.pop('openform_path')
-
-    self.openform_path = openform_path
-
-    self.entry_options = kwargs.pop('entry_options', {})
-    self.entry_grid_options = kwargs.pop('entry_grid_options', {
-      'column': 1,
-      'row': 0
-    })
-
-    self.label_options = kwargs.pop('label_options', {
-      'text': kwargs.pop('text', '')
-    })
-    self.label_grid_options = kwargs.pop('label_grid_options', {
-      'column': 0,
-      'row': 0
-    })
-
-    self.Var = kwargs.pop('Var', StringVar)
-
-    super().__init__(master, **kwargs)
-
-    # 하위 컴포넌트 그리기
-    self.render()
-
-  def render(self):
-    self.label = Label(self, **self.label_options)
-    self.label.grid(**self.label_grid_options)
-    self.entry = Entry(self, **self.entry_options)
-    self.entry.grid(**self.entry_grid_options)
-  
-# 왼쪽 프레임
-class FormFrame(Frame):
-  def __init__(self, *args, **kwargs):
-    '''변수 input들이 담기는 Frame입니다'''
-
-    super().__init__(*args, **kwargs)
-
-    # 하위 컴포넌트 그리기
-    self.render()
-    
-  def render(self):
-    self.create_forms()
-
-  def create_forms(self):
-    label_column_minsize = 200
-
-    labelFrame1 = LabelFrame(self, text='Properties')
-    labelFrame1.pack(padx=5, pady=5)
-    ofInput11 = OpenformInputFrame(labelFrame1, openform_path='', text='Density')
-    ofInput11.columnconfigure(0, minsize=label_column_minsize)
-    ofInput11.pack()
-    ofInput12 = OpenformInputFrame(labelFrame1, openform_path='', text='Viscosity')
-    ofInput12.columnconfigure(0, minsize=label_column_minsize)
-    ofInput12.pack()
-    ofInput13 = OpenformInputFrame(labelFrame1, openform_path='', text='Surface tension coefficient')
-    ofInput13.columnconfigure(0, minsize=label_column_minsize)
-    ofInput13.pack()
-
-    labelFrame2 = LabelFrame(self, text='Nozzle Spec')
-    labelFrame2.pack(padx=5, pady=5)
-    ofInput21 = OpenformInputFrame(labelFrame2, openform_path='', text='Nozzle radius')
-    ofInput21.columnconfigure(0, minsize=label_column_minsize)
-    ofInput21.pack()
-    ofInput22 = OpenformInputFrame(labelFrame2, openform_path='', text='Rotating speed')
-    ofInput22.columnconfigure(0, minsize=label_column_minsize)
-    ofInput22.pack()
-    ofInput23 = OpenformInputFrame(labelFrame2, openform_path='', text='Nozzle velocity')
-    ofInput23.columnconfigure(0, minsize=label_column_minsize)
-    ofInput23.pack()
-    ofInput24 = OpenformInputFrame(labelFrame2, openform_path='', text='Nozzle velocity')
-    ofInput24.columnconfigure(0, minsize=label_column_minsize)
-    ofInput24.pack()
-
-    labelFrame3 = LabelFrame(self, text='Solution Control')
-    labelFrame3.pack(padx=5, pady=5)
-    ofInput31 = OpenformInputFrame(labelFrame3, openform_path='', text='Start time')
-    ofInput31.columnconfigure(0, minsize=label_column_minsize)
-    ofInput31.pack()
-    ofInput32 = OpenformInputFrame(labelFrame3, openform_path='', text='End time')
-    ofInput32.columnconfigure(0, minsize=label_column_minsize)
-    ofInput32.pack()
-    ofInput33 = OpenformInputFrame(labelFrame3, openform_path='', text='Time step')
-    ofInput33.columnconfigure(0, minsize=label_column_minsize)
-    ofInput33.pack()
-    ofInput43 = OpenformInputFrame(labelFrame3, openform_path='', text='Write interval')
-    ofInput43.columnconfigure(0, minsize=label_column_minsize)
-    ofInput43.pack()
-
-
-# 오른쪽 프레임
-class ControlFrame(Frame):
-  def __init__(self, *args, **kwargs):
-    '''Button 같은 컨트롤 UI들이 담기는 Frame입니다'''
-    
-    super().__init__(*args, **kwargs)
-
-    # 하위 컴포넌트 그리기
-    self.render()
-
-  def render(self):
-    self.create_buttons()
-
-  def create_buttons(self):
-    Button(self, text="Run", width=6).pack(side=BOTTOM)
-    Button(self, text="Mesh", width=6).pack(side=BOTTOM)
-
-# Main Application 입니다.
 class Application(Tk):
+  """
+  Main Application 입니다.
+  """
+
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    
-    # 하위 컴포넌트 그리기
+
+    self.variables = {}
+
+    # template에 필요한 variables 생성
+    # 배열로 초기화할 경우 벡터로 간주하여 처리합니다.
+    self.variables["rhol"] = DoubleVar()
+    self.variables["mul"] = DoubleVar()
+    self.variables["sigma"] = DoubleVar()
+    self.variables["JetR"] = DoubleVar()
+    self.variables["UMagFixedVal"] = DoubleVar()
+    self.variables["NozzleMotionDir"] = [DoubleVar(), DoubleVar(), DoubleVar()]
+    self.variables["Omega"] = [DoubleVar(), DoubleVar(), DoubleVar()]
+    self.variables["startTime"] = DoubleVar()
+    self.variables["endTime"] = DoubleVar()    
+    self.variables["deltaT"] = DoubleVar()
+    self.variables["writeInterval"] = IntVar()
+
+    # render를 새로할 경우 clear 필요.
+    self.labelFrames = []
+
     self.render()
 
+  def renderMainFrame(self):
+    """
+    Variables가 그려지는 메인 프레임을 생성, 추가합니다.
+    """
+    self.MainFrame = Frame(self)
+    self.MainFrame.pack(side=LEFT, fill=BOTH, expand=1)
+
+  def renderButtonsFrame(self):
+    """
+    버튼들이 모인 프레임을 생성, 추가합니다.
+    """
+    self.ButtonsFrame = Frame(self)
+    self.ButtonsFrame.pack(side=LEFT, fill=BOTH)
+    self.runButton = Button(self.ButtonsFrame, text='Run', command=self.run)
+    self.runButton.pack(side=BOTTOM)
+    self.meshButton = Button(self.ButtonsFrame, text='Mesh')
+    self.meshButton.pack(side=BOTTOM)
+
+  def renderLabelFrameToMain(self, label, variables):
+    """
+    메인프레임에 LabelFrame과 그의 variables를 추가합니다.
+    """
+
+    # variable의 label의 최소 크기
+    variableLabelColumnMinsize=200
+
+    # main frame 안에 들어가는 label Frame 생성
+    labelFrame = LabelFrame(self.MainFrame, text=label)
+
+    # column 설정
+    labelFrame.columnconfigure(0, minsize=variableLabelColumnMinsize)
+    labelFrame.columnconfigure(1, weight=1)
+
+    # label frame 을 pack.
+    labelFrame.pack(fill=X)
+
+    # label frame 안에 들어가는 변수들의 UI 생성 (Label, Entry)
+    # ex)
+    # ┌──────────────────────────────────────────┐
+    # │ ┌───LableFrame─────────────────────────┐ │
+    # │ │                  ┌─────────────────┐ │ │
+    # │ │      Label       │     Variable    │ │ │
+    # │ │                  └─────────────────┘ │ │
+    # │ │                ● ● ●                 │ │
+    # │ └──────────────────────────────────────┘ │
+    # └──────────────────────────────────────────┘
+    #
+    # variables는 반드시 list로 받는다.
+    for index, variable in enumerate(variables):
+
+      # variable의 형태 정의
+      (label, Var) = variable
+
+      # 좌측 Label 생성 
+      l = Label(labelFrame, text=label)
+      l.grid(row=index+1, column=0)
+
+      # 우측 entry(variables)의 frame 생성
+      entryFrame = Frame(labelFrame)
+      entryFrame.grid(row=index+1, column=1, sticky=N+W+E+S)
+
+      # 주어진 variable이 list일 경우.
+      if (isinstance(Var, list)):
+        for v in Var:
+          e = Entry(entryFrame)
+          e['textvariable'] = v
+          e.pack(side=LEFT, fill=X, expand=1)
+
+      # 단일 variable일 경우
+      else:
+        e = Entry(entryFrame)
+        e['textvariable'] = Var
+        e.pack(side=LEFT, fill=X, expand=1)
+
+    # 관리를 위한 단순 추가.
+    self.labelFrames.append(labelFrame)
+
+  # app을 그리는 로직.
   def render(self):
-    FormFrame(self).pack(side=LEFT, padx=5, pady=5)
-    ControlFrame(self).pack(side=LEFT, fill=Y, padx=10, pady=10)
+    self.renderMainFrame()
+    self.renderButtonsFrame()
     
-    # Entry(self).grid(column=1)
-    # self.JetR = tk.DoubleVar()
-    # self.label = tk.Label(self, text="JetR"e)
-    # self.label.pack(side='left')
-    # self.JetREntry = tk.Entry(self)
-    # self.JetREntry['textvariable'] = self.JetR
-    # self.JetREntry.pack(side='left')
+    self.renderLabelFrameToMain('Properties', [
+      ('Density', self.variables["rhol"]),
+      ('Viscosity', self.variables["mul"]),
+      ('Surface tension coefficient', self.variables["sigma"])
+    ])
 
-    # self.hFixedVal = tk.DoubleVar()
-    # self.label = tk.Label(self, text="hFixedVal")
-    # self.label.pack(side='left')
-    # self.hFixedValEntry = tk.Entry(self)
-    # self.hFixedValEntry['textvariable'] = self.hFixedVal
-    # self.hFixedValEntry.pack(side='left')
+    self.renderLabelFrameToMain('Nozzle Spec', [
+      ('Nozzle radius', self.variables["JetR"]),
+      ('Rotating speed', self.variables["Omega"]),
+      ('Nozzle velosity', self.variables["UMagFixedVal"]),
+      ('Nozzle direction', self.variables["NozzleMotionDir"])
+    ])
 
-    # self.UsMagFixedVal = tk.DoubleVar()
-    # self.label = tk.Label(self, text="UsMagFixedVal")
-    # self.label.pack(side='left')
-    # self.UsMagFixedValEntry = tk.Entry(self)
-    # self.UsMagFixedValEntry['textvariable'] = self.UsMagFixedVal
-    # self.UsMagFixedValEntry.pack(side='left')
+    self.renderLabelFrameToMain('Solution Control', [
+      ('Start time', self.variables["startTime"]),
+      ('End time', self.variables["endTime"]),
+      ('Time step', self.variables["deltaT"]),
+      ('Writing interval', self.variables["writeInterval"])
+    ])
+
+  def save(self):
+    """
+    self.variables를 순회하여 template에 적합한 dict를 생성한후 FOAM의 파일을 생성한다.
+    """
+
+    # template에 전달될 dictionary
+    valueDict = {}
     
-    # self.txt.grid(row=0, column=1)
-    # btn = Button(root, text="OK", width=15)
-    # btn.grid(row=1, column=1)
-    # self.hi_there = tk.Button(self)
-    # self.hi_there["text"] = "Hello World\n(click me)"
-    # self.hi_there["command"] = self.say_hi
-    # self.hi_there.pack(side="top")
+    for key, value in self.variables.items():
+      # Variables가 list일 때는 순회하여 벡터로 만든다.
+      if isinstance(value, list):
+        valueDict[key] = "(" + " ".join([str(v.get()) for v in value]) + ")"
 
-    # self.saveBtn = tk.Button(self, text="저장", fg="black",
-    #                       command=self.save)
-    # self.saveBtn.pack(side="bottom")
+      # 단일 variables일 경우 단순히 추가한다.
+      else:
+        valueDict[key] = value.get()
+    
+    # template을 통해 foam파일을 저장한다.
+    saveFoamFiles(valueDict)
 
-  # def say_hi(self):
-  #   print("hi there, everyone!")
+  def run(self):
+    self.save()
 
-  # def save(self):
-  #   inputDict = {}
-  #   inputDict['JetR'] = self.JetR.get()
-  #   inputDict['hFixedVal'] = self.hFixedVal.get()
-  #   inputDict['UsMagFixedVal'] = self.UsMagFixedVal.get()
-  #   # print(inputDict)
-
-  #   # transportProperties가 저장될 위치를 지정한다.
-  #   write_openform(inputDict, './transportProperties')
-
-
-app = Application()
-app.mainloop()
+if __name__ == '__main__':
+  app = Application()
+  app.mainloop()
